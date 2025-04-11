@@ -18,17 +18,17 @@ namespace Recrute.Controllers
             this._db = dbContext;
 
         }
-        public static string username {  get; set; }
-        public static Double Price {  get; set; }
+        public static string username { get; set; }
+        public static Double Price { get; set; }
 
-        
-      
+
+
         [HttpPost("Payment")]
         public async Task<ActionResult> Pay([FromBody] Payment pay)
         {
             string random = "";
-            
-            if(pay == null)
+
+            if (pay == null)
             {
                 return BadRequest("Payment atributes are null");
             }
@@ -36,70 +36,71 @@ namespace Recrute.Controllers
             {
                 try
                 {
-                   
-                    StripeConfiguration.ApiKey = "sk_test_51OWe0KCl1DKyJcVcYnUxR6WSXVSuhGGG4DxvYfdj12fkDPMhBnUr6l2ntZ5I04TdJQhXHutBV5uBBIqCZ25HQr8u00OX1PZOJD";
 
-                               
-                                    // 1. Create a Payment Intent
-                                    var paymentIntentService = new PaymentIntentService();
-                                    var paymentIntent = paymentIntentService.Create(new PaymentIntentCreateOptions
-                                    {
-                                        Amount = ((int)Price) * 100, // Amount in the smallest currency unit (e.g., 5000 = $50.00)
-                                        Currency = "eur",
-                                        PaymentMethodTypes = new List<string>{"card"} ,
-                                        Description = "Package Purchase",
-                                    });
+                    StripeConfiguration.ApiKey = "pk_test_51OWe0KCl1DKyJcVcTPuad4uMinERoYHViKJyJeU80fl2KTlSAYus958iL0TZlq9iC9aJr75xm0pkUhAuhZ65hopV001gQItJiL";
 
-                                    Console.WriteLine($"Payment Intent Created: {paymentIntent.Id}");
 
-                                    // 2. Confirm the Payment Intent (if required, e.g., for manual confirmation)
-                                    var confirmOptions = new PaymentIntentConfirmOptions
-                                    {
-                                        PaymentMethod = "pm_card_visa", // Replace with your actual PaymentMethod ID
-                                    };
+                    // 1. Create a Payment Intent
+                    var paymentIntentService = new PaymentIntentService();
+                    var paymentIntent = paymentIntentService.Create(new PaymentIntentCreateOptions
+                    {
+                        Amount = ((int)Price) * 100, // Amount in the smallest currency unit (e.g., 5000 = $50.00)
+                        Currency = "eur",
+                        PaymentMethodTypes = new List<string> { "card" },
+                        Description = "Package Purchase",
+                    });
 
-                                    var confirmedIntent = paymentIntentService.Confirm(paymentIntent.Id, confirmOptions);
-                                    Console.WriteLine($"Payment Intent Confirmed: {confirmedIntent.Status}");
-                                    
-                                        string secureRandomString = new string(Enumerable.Range(0, 10)
-                                    .Select(_ => "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"[
-                                     RandomNumberGenerator.GetInt32(62)]).ToArray());
-                                      random = secureRandomString;
-                         
-                    
-                    
+                    Console.WriteLine($"Payment Intent Created: {paymentIntent.Id}");
+
+                    // 2. Confirm the Payment Intent (if required, e.g., for manual confirmation)
+                    var confirmOptions = new PaymentIntentConfirmOptions
+                    {
+                        PaymentMethod = "pm_card_visa", // Replace with your actual PaymentMethod ID
+                    };
+
+                    var confirmedIntent = paymentIntentService.Confirm(paymentIntent.Id, confirmOptions);
+                    Console.WriteLine($"Payment Intent Confirmed: {confirmedIntent.Status}");
+
+                    string secureRandomString = new string(Enumerable.Range(0, 10)
+                .Select(_ => "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"[
+                 RandomNumberGenerator.GetInt32(62)]).ToArray());
+                    random = secureRandomString;
+
+
+
                     var user = _db.user
-                                      .Where(x =>  x.username == username)
-                                      .FirstOrDefault();           
-                    if (confirmedIntent.Status == "succeeded" && user!=null)
-                                    {
-                                       
-                                                             
-                            string hash = BCrypt.Net.BCrypt.HashPassword(random);
-                    
-                                user.Password = hash;
-                                _db.user.Update(user);
-                                _db.SaveChanges();
-                                SendEmailWithAttachment(pay.Email, random);
+                                      .Where(x => x.username == username)
+                                      .FirstOrDefault();
+                    if (confirmedIntent.Status == "succeeded" && user != null)
+                    {
 
-                            var rec= _db.employ.Where(a=>a.Username == username).FirstOrDefault();
-                            UsingPack u = new UsingPack() {
-                                RecrComp = rec.RecrComp,
-                                Exp_Day = DateTime.Now.Date
-                           };
 
-                            _db.usingpack.Add(u);
-                            _db.SaveChanges();
+                        string hash = BCrypt.Net.BCrypt.HashPassword(random);
 
-                            }
+                        user.Password = hash;
+                        _db.user.Update(user);
+                        _db.SaveChanges();
+                        SendEmailWithAttachment(pay.Email, random);
 
-                            
-                                else
-                            {
-                                return BadRequest("Errorr");
-                            }
-                   
-                  
+                        var rec = _db.employ.Where(a => a.Username == username).FirstOrDefault();
+                        UsingPack u = new UsingPack()
+                        {
+                            RecrComp = rec.RecrComp,
+                            Exp_Day = DateTime.Now.Date
+                        };
+
+                        _db.usingpack.Add(u);
+                        _db.SaveChanges();
+
+                    }
+
+
+                    else
+                    {
+                        return BadRequest("Errorr");
+                    }
+
+
 
 
                 }
@@ -130,7 +131,7 @@ namespace Recrute.Controllers
 
                     using (MailMessage mail = new MailMessage(senderEmail, recipientEmail, subject, message))
                     {
-                       
+
                         smtpClient.Send(mail);
                         Console.WriteLine("Email sent successfully!");
                     }
