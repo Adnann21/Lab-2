@@ -140,7 +140,7 @@ namespace Recrute.Controllers
                 {
                     return NotFound("Invalid username");
                 }
-                return NotFound("Invalid Account");
+               
             }
             catch (Exception ex)
             {
